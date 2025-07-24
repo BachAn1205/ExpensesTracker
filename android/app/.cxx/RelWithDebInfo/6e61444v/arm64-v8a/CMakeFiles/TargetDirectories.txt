@@ -1,0 +1,2 @@
+D:/MOBILEAPP/expenses_tracker/android/app/.cxx/RelWithDebInfo/6e61444v/arm64-v8a/CMakeFiles/edit_cache.dir
+D:/MOBILEAPP/expenses_tracker/android/app/.cxx/RelWithDebInfo/6e61444v/arm64-v8a/CMakeFiles/rebuild_cache.dir

@@ -16,7 +16,9 @@ dependencies:
   flutter_colorpicker: ^1.0.3
   uuid: ^4.3.3
 
-  firebase_core: ^2.16.0
+  firebase_core: ^2.32.0 # Đã cập nhật lên phiên bản mới nhất
+  cloud_firestore: ^4.17.5 # Đã thêm/cập nhật lên phiên bản mới nhất
+  firebase_auth: ^4.20.0 # Đã thêm/cập nhật lên phiên bản mới nhất
 
   bloc: ^8.1.2
   flutter_bloc: ^8.1.3
