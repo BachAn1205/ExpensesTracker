@@ -1,13 +1,22 @@
+// android/build.gradle
 buildscript {
-    ext.kotlin_version = '1.9.22'
+    // Cập nhật phiên bản Kotlin lên bản mới nhất mà Flutter hoặc AGP của bạn hỗ trợ
+    // Ví dụ: '1.9.22' hoặc cao hơn nếu có
+    ext.kotlin_version = '1.9.22' // Hoặc phiên bản mới nhất được khuyến nghị
+
     repositories {
         google()
         mavenCentral()
     }
 
     dependencies {
+        // Cập nhật AGP lên phiên bản 8.x.x mới nhất
+        // Ví dụ: '8.4.0' hoặc '8.5.0'
+        classpath 'com.android.tools.build:gradle:8.4.0' // CẬP NHẬT DÒNG NÀY
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'com.android.tools.build:gradle:8.4.0'
+        // Cập nhật Google Services plugin lên phiên bản mới nhất
+        // Ví dụ: '4.4.1' hoặc '4.4.2'
+        classpath 'com.google.gms:google-services:4.4.1' // CẬP NHẬT DÒNG NÀY
     }
 }
 
@@ -22,10 +31,8 @@ rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
-subprojects {
-    project.evaluationDependsOn(':app')
-}
 
+// Giữ nguyên hoặc thay đổi về rootProject.buildDir để nhất quán nếu muốn
 tasks.register("clean", Delete) {
-    delete rootProject.buildDir
+    delete rootProject.buildDir // Giữ rootProject.buildDir để nhất quán
 }

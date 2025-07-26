@@ -36,7 +36,7 @@ Future getCategoryCreation(BuildContext context) {
               }
             },
             child: AlertDialog(
-              title: const Text('Create a Category'),
+              title: Text('Tạo danh mục'),
               content: SizedBox(
                 width: MediaQuery.of(context).size.width,
                 child: Column(
@@ -46,16 +46,16 @@ Future getCategoryCreation(BuildContext context) {
                       controller: categoryNameController,
                       textAlignVertical: TextAlignVertical.center,
                       decoration: InputDecoration(
-                        isDense: true,
                         filled: true,
                         fillColor: Colors.white,
-                        hintText: 'Name',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        hintText: 'Tên danh mục',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none
+                        ),
                       ),
                     ),
-                    const SizedBox(
-                      height: 16,
-                    ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: categoryIconController,
                       onTap: () {
@@ -73,8 +73,13 @@ Future getCategoryCreation(BuildContext context) {
                           size: 12,
                         ),
                         fillColor: Colors.white,
-                        hintText: 'Icon',
-                        border: OutlineInputBorder(borderRadius: isExpended ? const BorderRadius.vertical(top: Radius.circular(12)) : BorderRadius.circular(12), borderSide: BorderSide.none),
+                        hintText: 'Chọn biểu tượng',
+                        border: OutlineInputBorder(
+                          borderRadius: isExpended
+                            ? const BorderRadius.vertical(top: Radius.circular(12))
+                            : BorderRadius.circular(12),
+                          borderSide: BorderSide.none
+                        ),
                       ),
                     ),
                     isExpended
@@ -106,9 +111,7 @@ Future getCategoryCreation(BuildContext context) {
                           ),
                         )
                       : Container(),
-                    const SizedBox(
-                      height: 16,
-                    ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: categoryColorController,
                       onTap: () {
@@ -131,14 +134,23 @@ Future getCategoryCreation(BuildContext context) {
                                     width: double.infinity,
                                     height: 50,
                                     child: TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(ctx2);
-                                        },
-                                        style: TextButton.styleFrom(backgroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                                        child: const Text(
-                                          'Save Color',
-                                          style: TextStyle(fontSize: 22, color: Colors.white),
-                                        )),
+                                      onPressed: () {
+                                        Navigator.pop(ctx2);
+                                      },
+                                      style: TextButton.styleFrom(
+                                        backgroundColor: Colors.black,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12)
+                                        )
+                                      ),
+                                      child: Text(
+                                        'Lưu màu sắc',
+                                        style: const TextStyle(
+                                          fontSize: 22,
+                                          color: Colors.white
+                                        ),
+                                      )
+                                    ),
                                   )
                                 ],
                               ),
@@ -152,23 +164,21 @@ Future getCategoryCreation(BuildContext context) {
                         isDense: true,
                         filled: true,
                         fillColor: categoryColor,
-                        hintText: 'Color',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        hintText: 'Chọn màu sắc',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none
+                        ),
                       ),
                     ),
-                    const SizedBox(
-                      height: 16,
-                    ),
+                    const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       height: kToolbarHeight,
-                      child: isLoading == true
-                        ? const Center(
-                            child: CircularProgressIndicator(),
-                          )
+                      child: isLoading
+                        ? const Center(child: CircularProgressIndicator())
                         : TextButton(
                             onPressed: () {
-                              // Create Category Object and POP
                               setState(() {
                                 category.categoryId = const Uuid().v1();
                                 category.name = categoryNameController.text;
@@ -178,10 +188,18 @@ Future getCategoryCreation(BuildContext context) {
                               
                               context.read<CreateCategoryBloc>().add(CreateCategory(category));
                             },
-                            style: TextButton.styleFrom(backgroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                            child: const Text(
-                              'Save',
-                              style: TextStyle(fontSize: 22, color: Colors.white),
+                            style: TextButton.styleFrom(
+                              backgroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)
+                              )
+                            ),
+                            child: Text(
+                              'Lưu',
+                              style: const TextStyle(
+                                fontSize: 22,
+                                color: Colors.white
+                              ),
                             )
                           ),
                     )
@@ -190,9 +208,8 @@ Future getCategoryCreation(BuildContext context) {
               ),
             ),
           );
-        },
-      ),
-    );
-  }
-);
+        }),
+      );
+    }
+  );
 }

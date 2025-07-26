@@ -37,4 +37,22 @@ class Expense {
       amount: entity.amount,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'expenseId': expenseId,
+      'category': category.toMap(),
+      'date': date.toIso8601String(),
+      'amount': amount,
+    };
+  }
+
+  static Expense fromMap(Map<String, dynamic> map) {
+    return Expense(
+      expenseId: map['expenseId'] ?? '',
+      category: Category.fromMap(map['category'] ?? {}),
+      date: DateTime.parse(map['date'] ?? DateTime.now().toIso8601String()),
+      amount: map['amount'] ?? 0,
+    );
+  }
 }

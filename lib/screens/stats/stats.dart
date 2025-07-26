@@ -1,7 +1,4 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-
-import 'chart.dart';
 
 class StatScreen extends StatelessWidget {
   const StatScreen({super.key});
@@ -31,7 +28,15 @@ class StatScreen extends StatelessWidget {
               ),
               child: const Padding(
                 padding: EdgeInsets.fromLTRB(12, 20, 12, 12),
-                child: MyChart(),
+                child: Center(
+                  child: Text(
+                    'Chart will be added later',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
               )
             )
           ],

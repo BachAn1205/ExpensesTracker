@@ -5,7 +5,6 @@ import 'package:expenses_tracker/screens/add_expense/views/category_creation.dar
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
 class AddExpense extends StatefulWidget {
@@ -25,7 +24,8 @@ class _AddExpenseState extends State<AddExpense> {
 
   @override
   void initState() {
-    dateController.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
+    final now = DateTime.now();
+    dateController.text = '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
     expense = Expense.empty;
     expense.expenseId = const Uuid().v1();
     super.initState();
@@ -48,7 +48,8 @@ class _AddExpenseState extends State<AddExpense> {
         child: Scaffold(
           backgroundColor: Theme.of(context).colorScheme.background,
           appBar: AppBar(
-            backgroundColor: Theme.of(context).colorScheme.background,
+            title: Text('Thêm chi tiêu'),
+            centerTitle: true,
           ),
           body: BlocBuilder<GetCategoriesBloc, GetCategoriesState>(
             builder: (context, state) {
@@ -58,13 +59,11 @@ class _AddExpenseState extends State<AddExpense> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text(
-                        "Add Expenses",
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
+                      Text(
+                        'Thêm chi tiêu',
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
                       ),
-                      const SizedBox(
-                        height: 16,
-                      ),
+                      const SizedBox(height: 16),
                       SizedBox(
                         width: MediaQuery.of(context).size.width * 0.7,
                         child: TextFormField(
@@ -78,13 +77,15 @@ class _AddExpenseState extends State<AddExpense> {
                               size: 16,
                               color: Colors.grey,
                             ),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                            hintText: 'Số tiền',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: BorderSide.none
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(
-                        height: 32,
-                      ),
+                      const SizedBox(height: 32),
                       TextFormField(
                         controller: categoryController,
                         textAlignVertical: TextAlignVertical.center,
@@ -92,7 +93,9 @@ class _AddExpenseState extends State<AddExpense> {
                         onTap: () {},
                         decoration: InputDecoration(
                           filled: true,
-                          fillColor: expense.category == Category.empty ? Colors.white : Color(expense.category.color),
+                          fillColor: expense.category == Category.empty
+                            ? Colors.white
+                            : Color(expense.category.color),
                           prefixIcon: expense.category == Category.empty
                             ? const Icon(
                                 FontAwesomeIcons.list,
@@ -116,8 +119,13 @@ class _AddExpenseState extends State<AddExpense> {
                               color: Colors.grey,
                             )
                           ),
-                          hintText: 'Category',
-                          border: const OutlineInputBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12)), borderSide: BorderSide.none),
+                          hintText: 'Danh mục',
+                          border: const OutlineInputBorder(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(12)
+                            ),
+                            borderSide: BorderSide.none
+                          ),
                         ),
                       ),
                       Container(
@@ -153,20 +161,22 @@ class _AddExpenseState extends State<AddExpense> {
                           )
                         ),
                       ),
-                      const SizedBox(
-                        height: 16,
-                      ),
+                      const SizedBox(height: 16),
                       TextFormField(
                         controller: dateController,
                         textAlignVertical: TextAlignVertical.center,
                         readOnly: true,
                         onTap: () async {
-                          DateTime? newDate = await showDatePicker(context: context, initialDate: expense.date, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 365)));
+                          DateTime? newDate = await showDatePicker(
+                            context: context,
+                            initialDate: expense.date,
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now().add(const Duration(days: 365))
+                          );
 
                           if (newDate != null) {
                             setState(() {
-                              dateController.text = DateFormat('dd/MM/yyyy').format(newDate);
-                              // selectDate = newDate;
+                              dateController.text = '${newDate.day.toString().padLeft(2, '0')}/${newDate.month.toString().padLeft(2, '0')}/${newDate.year}';
                               expense.date = newDate;
                             });
                           }
@@ -179,13 +189,14 @@ class _AddExpenseState extends State<AddExpense> {
                             size: 16,
                             color: Colors.grey,
                           ),
-                          hintText: 'Date',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          hintText: 'Ngày',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none
+                          ),
                         ),
                       ),
-                      const SizedBox(
-                        height: 32,
-                      ),
+                      const SizedBox(height: 32),
                       SizedBox(
                         width: double.infinity,
                         height: kToolbarHeight,
@@ -199,10 +210,18 @@ class _AddExpenseState extends State<AddExpense> {
 
                                 context.read<CreateExpenseBloc>().add(CreateExpense(expense));
                               },
-                              style: TextButton.styleFrom(backgroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                              child: const Text(
-                                'Save',
-                                style: TextStyle(fontSize: 22, color: Colors.white),
+                              style: TextButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)
+                                )
+                              ),
+                              child: Text(
+                                'Lưu',
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  color: Colors.white
+                                ),
                               )
                             ),
                       )

@@ -42,4 +42,24 @@ class Category {
       color: entity.color,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'categoryId': categoryId,
+      'name': name,
+      'totalExpenses': totalExpenses,
+      'icon': icon,
+      'color': color,
+    };
+  }
+
+  static Category fromMap(Map<String, dynamic> map) {
+    return Category(
+      categoryId: map['categoryId'] ?? '',
+      name: map['name'] ?? '',
+      totalExpenses: map['totalExpenses'] ?? 0,
+      icon: map['icon'] ?? '',
+      color: map['color'] ?? 0,
+    );
+  }
 }
