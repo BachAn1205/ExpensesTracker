@@ -5,12 +5,16 @@ class Expense {
   Category category;
   DateTime date;
   int amount;
+  String? description;
+  String type;
 
   Expense({
     required this.expenseId,
     required this.category,
     required this.date,
     required this.amount,
+    this.description,
+    required this.type,
   });
 
   static final empty = Expense(
@@ -18,6 +22,8 @@ class Expense {
     category: Category.empty,
     date: DateTime.now(),
     amount: 0,
+    description: '',
+    type: 'expense',
   );
 
   ExpenseEntity toEntity() {
@@ -26,6 +32,8 @@ class Expense {
       category: category,
       date: date,
       amount: amount,
+      description: description,
+      type: type,
     );
   }
 
@@ -35,6 +43,8 @@ class Expense {
       category: entity.category,
       date: entity.date,
       amount: entity.amount,
+      description: entity.description,
+      type: entity.type,
     );
   }
 
@@ -44,6 +54,8 @@ class Expense {
       'category': category.toMap(),
       'date': date.toIso8601String(),
       'amount': amount,
+      'description': description,
+      'type': type,
     };
   }
 
@@ -53,6 +65,8 @@ class Expense {
       category: Category.fromMap(map['category'] ?? {}),
       date: DateTime.parse(map['date'] ?? DateTime.now().toIso8601String()),
       amount: map['amount'] ?? 0,
+      description: map['description'] ?? '',
+      type: map['type'] ?? 'expense',
     );
   }
 }

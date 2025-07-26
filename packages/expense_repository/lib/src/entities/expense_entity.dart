@@ -4,16 +4,20 @@ import 'package:expense_repository/src/entities/entities.dart';
 import '../models/models.dart';
 
 class ExpenseEntity {
-  String expenseId;
-  Category category;
-  DateTime date;
-  int amount;
+  final String expenseId;
+  final Category category;
+  final DateTime date;
+  final int amount;
+  final String? description;
+  final String type;
 
   ExpenseEntity({
     required this.expenseId,
     required this.category,
     required this.date,
     required this.amount,
+    this.description,
+    required this.type,
   });
 
   Map<String, Object?> toDocument() {
@@ -22,6 +26,8 @@ class ExpenseEntity {
       'category': category.toEntity().toDocument(),
       'date': date,
       'amount': amount,
+      'description': description,
+      'type': type,
     };
   }
 
@@ -31,6 +37,8 @@ class ExpenseEntity {
       category: Category.fromEntity(CategoryEntity.fromDocument(doc['category'])),
       date: (doc['date'] as Timestamp).toDate(),
       amount: doc['amount'],
+      description: doc['description'] ?? '',
+      type: doc['type'] ?? 'expense',
     );
   }
 }

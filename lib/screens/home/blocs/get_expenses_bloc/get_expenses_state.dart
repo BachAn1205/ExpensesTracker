@@ -9,7 +9,13 @@ sealed class GetExpensesState extends Equatable {
 
 final class GetExpensesInitial extends GetExpensesState {}
 
-final class GetExpensesFailure extends GetExpensesState {}
+final class GetExpensesFailure extends GetExpensesState {
+  final String error;
+  const GetExpensesFailure(this.error);
+
+  @override
+  List<Object> get props => [error];
+}
 final class GetExpensesLoading extends GetExpensesState {}
 final class GetExpensesSuccess extends GetExpensesState {
   final List<Expense> expenses;

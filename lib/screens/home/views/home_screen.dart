@@ -29,7 +29,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return BlocBuilder<GetExpensesBloc, GetExpensesState>(
       builder: (context, state) {
-        if(state is GetExpensesSuccess) {
+        if (state is GetExpensesSuccess) {
+          if (state.expenses.isEmpty) {
+            return const Scaffold(
+              body: Center(
+                child: Text('Không có dữ liệu giao dịch!', style: TextStyle(fontSize: 18)),
+              ),
+            );
+          }
           return Scaffold(
             bottomNavigationBar: ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
@@ -103,8 +110,18 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             body: index == 0 
-              ? MainScreen(state.expenses) 
+              ? const MainScreen()
               : const StatScreen()
+          );
+        } else if (state is GetExpensesFailure) {
+          return Scaffold(
+            body: Center(
+              child: Text(
+                'Lỗi khi tải dữ liệu: ${state.error}',
+                style: TextStyle(fontSize: 16, color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+            ),
           );
         } else {
           return const Scaffold(

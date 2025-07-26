@@ -30,11 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () => Navigator.of(context).pushNamed('/settings/edit_profile'),
           ),
-          ListTile(
-            title: const Text('Cài đặt Tài khoản'),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () => Navigator.of(context).pushNamed('/settings/account_settings'),
-          ),
+
           ListTile(
             title: const Text('Cài đặt Ứng dụng'),
             trailing: const Icon(Icons.arrow_forward_ios),
