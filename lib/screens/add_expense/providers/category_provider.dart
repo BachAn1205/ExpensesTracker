@@ -12,6 +12,19 @@ class CategoryProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   String? get currentUserId => _auth.currentUser?.uid;
 
+  CategoryProvider() {
+    FirebaseAuth.instance.userChanges().listen((user) {
+      if (user != null) {
+        // User mới đăng nhập, fetch lại danh mục
+        fetchCategories();
+      } else {
+        // User đăng xuất, clear danh mục
+        _categories = [];
+        notifyListeners();
+      }
+    });
+  }
+
   Future<void> fetchCategories() async {
     if (currentUserId == null) return;
     
@@ -66,6 +79,30 @@ class CategoryProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> addCategoryByName(String name, String icon) async {
+    final colorList = [
+      0xFF2196F3, // blue
+      0xFFFFC107, // amber
+      0xFF4CAF50, // green
+      0xFFF44336, // red
+      0xFF9C27B0, // purple
+      0xFFFF9800, // orange
+      0xFF009688, // teal
+      0xFF795548, // brown
+      0xFF607D8B, // blue grey
+    ];
+    final color = colorList[_categories.length % colorList.length];
+    final category = Category(
+      categoryId: '',
+      name: name,
+      totalExpenses: 0,
+      icon: icon,
+      color: color,
+    );
+    await addCategory(category);
+    await fetchCategories(); // Đảm bảo cập nhật lại danh sách
+  }
+
   Future<void> updateCategory(Category category) async {
     try {
       await FirebaseFirestore.instance.collection('categories').doc(category.categoryId).update({
@@ -96,4 +133,3 @@ class CategoryProvider extends ChangeNotifier {
     }
   }
 }
-

@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:expense_repository/expense_repository.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/expense_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({Key? key}) : super(key: key);
@@ -16,21 +19,25 @@ class _AccountScreenState extends State<AccountScreen> {
   String? userName = 'Tên người dùng';
   String? email = 'email@example.com';
   String? avatarPath;
+  String? photoUrl;
 
   @override
   void initState() {
     super.initState();
-    fetchUserData();
-  }
-
-  Future<void> fetchUserData() async {
-    // TODO: Replace with actual Firestore user fetching logic
-    // Example:
-    // final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
-    // setState(() {
-    //   userName = userDoc['name'];
-    //   email = userDoc['email'];
-    // });
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .snapshots()
+          .listen((doc) {
+        setState(() {
+          userName = doc.data()?['name'] ?? user.displayName ?? 'Tên người dùng';
+          email = doc.data()?['email'] ?? user.email ?? 'email@example.com';
+          photoUrl = doc.data()?['photoUrl'] ?? user.photoURL;
+        });
+      });
+    }
   }
 
   Future<void> pickAvatar() async {
@@ -40,6 +47,28 @@ class _AccountScreenState extends State<AccountScreen> {
       setState(() {
         avatarPath = picked.path;
       });
+
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Upload file lên Firebase Storage
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('avatars')
+            .child('${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg');
+        await storageRef.putFile(File(picked.path));
+        final downloadUrl = await storageRef.getDownloadURL();
+
+        // Lưu URL vào Firestore
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+          'photoUrl': downloadUrl,
+        });
+
+        // Cập nhật UI
+        setState(() {
+          avatarPath = null; // Để CircleAvatar load lại từ network
+        });
+        // fetchUserData(); // Reload user info - REMOVED
+      }
     }
   }
 
@@ -63,8 +92,12 @@ class _AccountScreenState extends State<AccountScreen> {
             child: CircleAvatar(
               radius: width / 5 / 2,
               backgroundColor: Colors.yellow[700],
-              backgroundImage: avatarPath != null ? AssetImage(avatarPath!) : null,
-              child: avatarPath == null
+              backgroundImage: avatarPath != null
+                  ? FileImage(File(avatarPath!))
+                  : (photoUrl != null && photoUrl!.isNotEmpty
+                      ? NetworkImage(photoUrl!)
+                      : null) as ImageProvider?,
+              child: avatarPath == null && (photoUrl == null || photoUrl!.isEmpty)
                   ? const Icon(Icons.person, size: 60, color: Colors.black)
                   : null,
             ),
@@ -89,7 +122,7 @@ class _AccountScreenState extends State<AccountScreen> {
               title: const Text('Quản lý tài khoản', style: TextStyle(color: Colors.black)),
               trailing: const Icon(Icons.chevron_right, color: Colors.grey),
               onTap: () {
-                Navigator.pushNamed(context, '/account_setting');
+                Navigator.pushNamed(context, '/settings/account_settings');
               },
             ),
           ),

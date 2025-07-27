@@ -15,6 +15,7 @@ import 'screens/home/views/account_screen.dart';
 import 'screens/settings/providers/currency_provider.dart';
 import 'screens/add_expense/providers/category_provider.dart';
 import 'services/firestore_test_widget.dart';
+import 'screens/add_expense/views/category_list_screen.dart';
 
 class MyAppView extends StatefulWidget {
   const MyAppView({super.key});
@@ -72,6 +73,7 @@ class _MyAppViewState extends State<MyAppView> {
           '/settings/change_password': (context) => const ChangePasswordScreen(),
           '/settings/app_settings': (context) => const AppSettingsScreen(),
           '/test': (context) => const FirestoreTestWidget(), // Thêm route test
+          '/category_list': (context) => const CategoryListScreen(),
         },
       ),
     );
