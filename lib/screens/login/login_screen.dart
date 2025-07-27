@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:expense_repository/expense_repository.dart';
 import '../home/providers/expense_provider.dart';
+import '../../services/firestore_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -47,6 +48,10 @@ class _LoginScreenState extends State<LoginScreen> {
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
+        
+        // Tạo categories mặc định cho user mới
+        final firestoreService = FirestoreService();
+        await firestoreService.createDefaultCategories();
       }
       if (mounted) {
         // Gọi fetchExpenses từ Provider sau khi đăng nhập thành công

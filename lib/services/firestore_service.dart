@@ -42,6 +42,41 @@ class FirestoreService {
     return categoryDocRef.id;
   }
 
+  // Tạo categories mặc định cho user mới
+  Future<void> createDefaultCategories() async {
+    if (currentUserId == null) throw Exception('User not logged in.');
+    
+    // Kiểm tra xem user đã có categories chưa
+    final existingCategories = await _firestore.collection('categories')
+        .where('userId', isEqualTo: currentUserId)
+        .get();
+    
+    if (existingCategories.docs.isNotEmpty) return; // Đã có categories
+    
+    // Tạo categories mặc định
+    final defaultCategories = [
+      {'name': 'Ăn uống', 'type': 'expense', 'icon': 'restaurant', 'color': 0xFFFF5722},
+      {'name': 'Di chuyển', 'type': 'expense', 'icon': 'directions_car', 'color': 0xFF2196F3},
+      {'name': 'Mua sắm', 'type': 'expense', 'icon': 'shopping_cart', 'color': 0xFF9C27B0},
+      {'name': 'Giải trí', 'type': 'expense', 'icon': 'movie', 'color': 0xFFFF9800},
+      {'name': 'Sức khỏe', 'type': 'expense', 'icon': 'local_hospital', 'color': 0xFF4CAF50},
+      {'name': 'Giáo dục', 'type': 'expense', 'icon': 'school', 'color': 0xFF607D8B},
+      {'name': 'Lương', 'type': 'income', 'icon': 'account_balance_wallet', 'color': 0xFF4CAF50},
+      {'name': 'Thưởng', 'type': 'income', 'icon': 'card_giftcard', 'color': 0xFFFF9800},
+      {'name': 'Đầu tư', 'type': 'income', 'icon': 'trending_up', 'color': 0xFF2196F3},
+    ];
+    
+    for (final category in defaultCategories) {
+      await addCategory(
+        category['name'] as String,
+        category['type'] as String,
+        category['icon'] as String,
+        category['color'] as int,
+        isDefault: true,
+      );
+    }
+  }
+
   Stream<List<Map<String, dynamic>>> getCategories() {
     if (currentUserId == null) return Stream.value([]);
     return _firestore.collection('categories')
@@ -91,23 +126,29 @@ class FirestoreService {
     String? description,
   }) async {
     if (currentUserId == null) throw Exception('User not logged in.');
-    final categoryDoc = await _firestore.collection('categories').doc(categoryId).get();
-    if (!categoryDoc.exists) throw Exception('Category not found!');
-    final categoryData = categoryDoc.data()!;
-    Map<String, dynamic>? walletData;
-    if (walletId != null) {
-      final walletDoc = await _firestore.collection('wallets').doc(walletId).get();
-      if (!walletDoc.exists) throw Exception('Wallet not found!');
-      walletData = walletDoc.data()!;
-    }
-    return await _firestore.runTransaction<String>((transaction) async {
+    
+    try {
+      // Lấy thông tin category
+      final categoryDoc = await _firestore.collection('categories').doc(categoryId).get();
+      if (!categoryDoc.exists) throw Exception('Category not found!');
+      final categoryData = categoryDoc.data()!;
+      
+      // Lấy thông tin wallet nếu có
+      Map<String, dynamic>? walletData;
+      if (walletId != null) {
+        final walletDoc = await _firestore.collection('wallets').doc(walletId).get();
+        if (!walletDoc.exists) throw Exception('Wallet not found!');
+        walletData = walletDoc.data()!;
+      }
+      
+      // Tạo transaction document
       final transactionDocRef = _firestore.collection('transactions').doc();
-      transaction.set(transactionDocRef, {
+      await transactionDocRef.set({
         'transactionId': transactionDocRef.id,
         'userId': currentUserId,
         'categoryId': categoryId,
         'walletId': walletId,
-        'amount': amount,
+        'amount': amount.toDouble(), // Đảm bảo amount là double
         'type': type,
         'description': description,
         'date': Timestamp.fromDate(date),
@@ -119,30 +160,61 @@ class FirestoreService {
         'walletName': walletData?['name'],
         'walletType': walletData?['type'],
       });
+      
+      // Cập nhật wallet balance nếu có (riêng biệt để tránh lỗi transaction)
       if (walletId != null) {
-        final walletRef = _firestore.collection('wallets').doc(walletId);
-        final currentWalletSnapshot = await transaction.get(walletRef);
-        final currentBalance = (currentWalletSnapshot.data()?['balance'] as num?)?.toDouble() ?? 0.0;
-        final newBalance = (type == 'income') ? (currentBalance + amount) : (currentBalance - amount);
-        transaction.update(walletRef, {'balance': newBalance, 'updatedAt': FieldValue.serverTimestamp()});
-      }
-      if (type == 'expense') {
-        final budgetsQuery = await _firestore.collection('budgets')
-            .where('userId', isEqualTo: currentUserId)
-            .where('categoryId', isEqualTo: categoryId)
-            .where('startDate', isLessThanOrEqualTo: Timestamp.fromDate(date))
-            .where('endDate', isGreaterThanOrEqualTo: Timestamp.fromDate(date))
-            .get();
-        for (var budgetDoc in budgetsQuery.docs) {
-          final budgetRef = _firestore.collection('budgets').doc(budgetDoc.id);
-          final currentBudgetSnapshot = await transaction.get(budgetRef);
-          final currentSpentAmount = (currentBudgetSnapshot.data()?['spentAmount'] as num?)?.toDouble() ?? 0.0;
-          final newSpentAmount = currentSpentAmount + amount;
-          transaction.update(budgetRef, {'spentAmount': newSpentAmount, 'updatedAt': FieldValue.serverTimestamp()});
+        try {
+          final walletRef = _firestore.collection('wallets').doc(walletId);
+          final currentWalletDoc = await walletRef.get();
+          if (currentWalletDoc.exists) {
+            final currentBalance = (currentWalletDoc.data()?['balance'] as num?)?.toDouble() ?? 0.0;
+            final newBalance = (type == 'income') ? (currentBalance + amount) : (currentBalance - amount);
+            await walletRef.update({'balance': newBalance, 'updatedAt': FieldValue.serverTimestamp()});
+          }
+        } catch (e) {
+          print('Warning: Could not update wallet balance: $e');
         }
       }
+      
+      // Cập nhật budget nếu là expense (riêng biệt để tránh lỗi index)
+      if (type == 'expense') {
+        try {
+          // Lấy tất cả budgets của user và category này
+          final budgetsQuery = await _firestore.collection('budgets')
+              .where('userId', isEqualTo: currentUserId)
+              .where('categoryId', isEqualTo: categoryId)
+              .get();
+          
+          final transactionDate = Timestamp.fromDate(date);
+          
+          for (var budgetDoc in budgetsQuery.docs) {
+            final budgetData = budgetDoc.data();
+            final startDate = budgetData['startDate'] as Timestamp?;
+            final endDate = budgetData['endDate'] as Timestamp?;
+            
+            // Kiểm tra xem transaction có trong khoảng thời gian của budget không
+            if (startDate != null && endDate != null) {
+              if (transactionDate.compareTo(startDate) >= 0 && transactionDate.compareTo(endDate) <= 0) {
+                final budgetRef = _firestore.collection('budgets').doc(budgetDoc.id);
+                final currentBudgetDoc = await budgetRef.get();
+                if (currentBudgetDoc.exists) {
+                  final currentSpentAmount = (currentBudgetDoc.data()?['spentAmount'] as num?)?.toDouble() ?? 0.0;
+                  final newSpentAmount = currentSpentAmount + amount;
+                  await budgetRef.update({'spentAmount': newSpentAmount, 'updatedAt': FieldValue.serverTimestamp()});
+                }
+              }
+            }
+          }
+        } catch (e) {
+          print('Warning: Could not update budget: $e');
+        }
+      }
+      
       return transactionDocRef.id;
-    });
+    } catch (e) {
+      print('Error in addTransaction: $e');
+      rethrow;
+    }
   }
 
   Stream<List<Map<String, dynamic>>> getTransactionsByDateRange(DateTime startDate, DateTime endDate) {

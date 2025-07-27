@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:expense_repository/src/entities/entities.dart';
 
 import '../models/models.dart';
 
@@ -22,21 +21,43 @@ class ExpenseEntity {
 
   Map<String, Object?> toDocument() {
     return {
-      'expenseId': expenseId,
-      'category': category.toEntity().toDocument(),
+      'transactionId': expenseId, // Đổi thành transactionId để phù hợp với transactions collection
+      'categoryId': category.categoryId,
+      'categoryName': category.name,
+      'categoryIcon': category.icon,
+      'categoryColor': category.color,
       'date': date,
-      'amount': amount,
+      'amount': amount.toDouble(), // Đảm bảo amount là double
       'description': description,
       'type': type,
     };
   }
 
   static ExpenseEntity fromDocument(Map<String, dynamic> doc) {
+    // Tạo Category từ dữ liệu trong transaction
+    final category = Category(
+      categoryId: doc['categoryId'] ?? '',
+      name: doc['categoryName'] ?? '',
+      totalExpenses: 0,
+      icon: doc['categoryIcon'] ?? '',
+      color: doc['categoryColor'] ?? 0xFF000000,
+    );
+
+    // Xử lý amount - có thể là double hoặc int
+    int amount;
+    if (doc['amount'] is double) {
+      amount = (doc['amount'] as double).toInt();
+    } else if (doc['amount'] is int) {
+      amount = doc['amount'] as int;
+    } else {
+      amount = 0;
+    }
+
     return ExpenseEntity(
-      expenseId: doc['expenseId'],
-      category: Category.fromEntity(CategoryEntity.fromDocument(doc['category'])),
+      expenseId: doc['transactionId'] ?? doc['expenseId'] ?? '', // Hỗ trợ cả transactionId và expenseId
+      category: category,
       date: (doc['date'] as Timestamp).toDate(),
-      amount: doc['amount'],
+      amount: amount,
       description: doc['description'] ?? '',
       type: doc['type'] ?? 'expense',
     );
