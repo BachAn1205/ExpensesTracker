@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:expense_repository/expense_repository.dart';
+import '../home/providers/expense_provider.dart';
+import '../../services/firestore_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,11 +32,32 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+      // Kiểm tra user profile trên Firestore
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(credential.user!.uid).get();
+      if (!userDoc.exists) {
+        // Nếu chưa có profile, tạo mới
+        await FirebaseFirestore.instance.collection('users').doc(credential.user!.uid).set({
+          'userId': credential.user!.uid,
+          'email': credential.user!.email ?? '',
+          'name': credential.user!.displayName ?? 'Người dùng mới',
+          'photoUrl': credential.user!.photoURL,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        
+        // Tạo categories mặc định cho user mới
+        final firestoreService = FirestoreService();
+        await firestoreService.createDefaultCategories();
+      }
       if (mounted) {
+        // Gọi fetchExpenses từ Provider sau khi đăng nhập thành công
+        final expenseProvider = Provider.of<ExpenseProvider>(context, listen: false);
+        final repo = Provider.of<ExpenseRepository>(context, listen: false);
+        await expenseProvider.fetchExpenses(repo);
         Navigator.of(context).pushReplacementNamed('/main_screen');
       }
     } on FirebaseAuthException catch (e) {
@@ -88,9 +113,9 @@ class _LoginScreenState extends State<LoginScreen> {
             _isLoading
                 ? const CircularProgressIndicator()
                 : ElevatedButton(
-                    onPressed: _login,
-                    child: const Text('Đăng nhập'),
-                  ),
+              onPressed: _login,
+              child: const Text('Đăng nhập'),
+            ),
             const SizedBox(height: 16),
             TextButton(
               onPressed: () {

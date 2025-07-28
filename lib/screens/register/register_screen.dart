@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/firestore_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -40,13 +41,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      
       // Lưu thông tin bổ sung vào Firestore
       await FirebaseFirestore.instance.collection('users').doc(credential.user!.uid).set({
+        'userId': credential.user!.uid,
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
-        'createdAt': DateTime.now(),
+        'photoUrl': null,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
       });
+      
+      // Tạo categories mặc định cho user mới
+      final firestoreService = FirestoreService();
+      await firestoreService.createDefaultCategories();
+      
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đăng ký thành công! Vui lòng đăng nhập.')),
+        );
         Navigator.of(context).pushReplacementNamed('/login');
       }
     } on FirebaseAuthException catch (e) {

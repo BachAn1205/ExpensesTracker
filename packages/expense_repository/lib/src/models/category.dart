@@ -62,4 +62,20 @@ class Category {
       color: map['color'] ?? 0,
     );
   }
+
+  Category copyWith({
+    String? categoryId,
+    String? name,
+    int? totalExpenses,
+    String? icon,
+    int? color,
+  }) {
+    return Category(
+      categoryId: categoryId ?? this.categoryId,
+      name: name ?? this.name,
+      totalExpenses: totalExpenses ?? this.totalExpenses,
+      icon: icon ?? this.icon,
+      color: color ?? this.color,
+    );
+  }
 }
