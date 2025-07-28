@@ -8,6 +8,7 @@ class CurrencyService {
     'KRW': 0.054,    // 1 VND = 0.054 KRW
     'MXN': 0.00071,  // 1 VND = 0.00071 MXN
     'BRL': 0.00020,  // 1 VND = 0.00020 BRL
+    'INR': 0.0035,   // 1 VND = 0.0035 INR (ví dụ)
   };
 
   static String _currentCurrency = 'VND';
@@ -43,9 +44,27 @@ class CurrencyService {
       'KRW': '₩',
       'MXN': '\$',
       'BRL': 'R\$',
+      'INR': '₹',
     };
 
     String symbol = symbols[currency] ?? currency;
     return '$symbol${amount.toStringAsFixed(2)}';
   }
+
+  static String getCurrencySymbol(String currency) {
+    final symbols = {
+      'VND': '₫',
+      'USD': '\$',
+      'CNY': '¥',
+      'EUR': '€',
+      'JPY': '¥',
+      'KRW': '₩',
+      'MXN': '\$',
+      'BRL': 'R\$',
+      'INR': '₹',
+    };
+    return symbols[currency] ?? currency;
+  }
+
+  static List<String> get supportedCurrencies => _exchangeRates.keys.toList();
 }

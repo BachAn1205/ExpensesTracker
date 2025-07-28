@@ -7,6 +7,8 @@ class Expense {
   int amount;
   String? description;
   String type;
+  String? walletId; // Thêm trường walletId
+  String? currency; // Thêm trường currency
 
   Expense({
     required this.expenseId,
@@ -15,6 +17,8 @@ class Expense {
     required this.amount,
     this.description,
     required this.type,
+    this.walletId, // Thêm tham số walletId
+    this.currency, // Thêm tham số currency
   });
 
   static final empty = Expense(
@@ -24,6 +28,8 @@ class Expense {
     amount: 0,
     description: '',
     type: 'expense',
+    walletId: null, // Thêm walletId cho empty
+    currency: 'VND', // Thêm currency cho empty
   );
 
   ExpenseEntity toEntity() {
@@ -34,6 +40,8 @@ class Expense {
       amount: amount,
       description: description,
       type: type,
+      walletId: walletId, // Thêm walletId
+      currency: currency, // Thêm currency
     );
   }
 
@@ -45,6 +53,8 @@ class Expense {
       amount: entity.amount,
       description: entity.description,
       type: entity.type,
+      walletId: entity.walletId, // Thêm walletId
+      currency: entity.currency, // Thêm currency
     );
   }
 
@@ -56,6 +66,8 @@ class Expense {
       'amount': amount,
       'description': description,
       'type': type,
+      'walletId': walletId, // Thêm walletId
+      'currency': currency, // Thêm currency
     };
   }
 
@@ -67,6 +79,8 @@ class Expense {
       amount: map['amount'] ?? 0,
       description: map['description'] ?? '',
       type: map['type'] ?? 'expense',
+      walletId: map['walletId'], // Thêm walletId
+      currency: map['currency'] ?? 'VND', // Thêm currency với giá trị mặc định
     );
   }
 }

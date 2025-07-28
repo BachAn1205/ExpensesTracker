@@ -135,7 +135,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   title: const Text('Ví của tôi', style: TextStyle(color: Colors.black)),
                   trailing: const Icon(Icons.chevron_right, color: Colors.grey),
                   onTap: () {
-                    Navigator.pushNamed(context, '/add_wallet');
+                    Navigator.pushNamed(context, '/wallet_list');
                   },
                 ),
                 ListTile(

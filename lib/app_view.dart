@@ -14,8 +14,10 @@ import '../screens/settings/app_settings_screen.dart';
 import 'screens/home/views/account_screen.dart';
 import 'screens/settings/providers/currency_provider.dart';
 import 'screens/add_expense/providers/category_provider.dart';
+import 'screens/home/providers/wallet_provider.dart';
 import 'services/firestore_test_widget.dart';
 import 'screens/add_expense/views/category_list_screen.dart';
+import 'screens/home/views/wallet_list_screen.dart';
 
 class MyAppView extends StatefulWidget {
   const MyAppView({super.key});
@@ -38,14 +40,14 @@ class _MyAppViewState extends State<MyAppView> {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-
       providers: [
         Provider<ExpenseRepository>(
-          create: (_) => FirebaseExpenseRepo(), // Giả sử đây là implement của bạn
+          create: (_) => FirebaseExpenseRepo(),
         ),
         ChangeNotifierProvider(create: (_) => ExpenseProvider()),
         ChangeNotifierProvider(create: (_) => CurrencyProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
+        ChangeNotifierProvider(create: (_) => WalletProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -74,6 +76,7 @@ class _MyAppViewState extends State<MyAppView> {
           '/settings/app_settings': (context) => const AppSettingsScreen(),
           '/test': (context) => const FirestoreTestWidget(), // Thêm route test
           '/category_list': (context) => const CategoryListScreen(),
+          '/wallet_list': (context) => const WalletListScreen(),
         },
       ),
     );

@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Để định dạng ngày tháng
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../providers/category_provider.dart';
 import '../../home/providers/expense_provider.dart';
-import '../../add_expense/providers/category_provider.dart';
 import '../../../services/firestore_service.dart';
+import '../../../services/currency_service.dart'; // Thêm import CurrencyService
+import '../../settings/providers/currency_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Thêm import CloudFirestore
 
 class AddTransactionScreen extends StatefulWidget {
   final VoidCallback? onClose;
@@ -21,6 +24,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   DateTime _selectedDate = DateTime.now();
   String _transactionType = 'expense'; // Loại giao dịch mặc định (chi tiêu)
   String? _selectedCategoryId;
+  String? _selectedWalletId; // Thêm biến chọn ví
   bool _isSaving = false;
 
   // Hàm chọn ngày
@@ -90,6 +94,28 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         return;
       }
 
+      if (_selectedWalletId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vui lòng chọn ví.')),
+        );
+        return;
+      }
+
+      // Lấy currency từ ví được chọn
+      String transactionCurrency = 'VND';
+      try {
+        final walletDoc = await FirebaseFirestore.instance
+            .collection('wallets')
+            .doc(_selectedWalletId)
+            .get();
+        if (walletDoc.exists) {
+          transactionCurrency = walletDoc.data()?['currency'] ?? 'VND';
+        }
+      } catch (e) {
+        print('Error getting wallet currency: $e');
+        transactionCurrency = 'VND';
+      }
+
       // Kiểm tra xem có categories không
       final categoryProvider = context.read<CategoryProvider>();
       if (categoryProvider.categories.isEmpty) {
@@ -99,7 +125,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         return;
       }
 
-      // Sử dụng FirestoreService để lưu transaction với userId
+      // Sử dụng FirestoreService để lưu transaction với userId và walletId
       final firestoreService = FirestoreService();
       final transactionId = await firestoreService.addTransaction(
         categoryId: _selectedCategoryId!,
@@ -107,6 +133,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         type: _transactionType,
         date: _selectedDate,
         description: _descriptionController.text.trim(),
+        currency: transactionCurrency, // Sử dụng currency của ví
+        walletId: _selectedWalletId!, // Thêm walletId
       );
 
       if (transactionId.isEmpty) {
@@ -131,6 +159,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         amount: amount.toInt(),
         description: _descriptionController.text.trim(),
         type: _transactionType,
+        walletId: _selectedWalletId, // Thêm walletId
+        currency: transactionCurrency, // Thêm currency
       );
 
       // Cập nhật ExpenseProvider
@@ -152,6 +182,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       print('Transaction ID: $transactionId');
       print('Amount: $amount');
       print('Category: $_selectedCategoryId');
+      print('Wallet: $_selectedWalletId');
       print('Date: $_selectedDate');
       print('Description: ${_descriptionController.text}');
       print('Type: $_transactionType');
@@ -298,6 +329,182 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: 20),
+
+            // Chọn Ví
+            Text(
+              'Chọn ví',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: FirestoreService().getWallets(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.6)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Đang tải danh sách ví...',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Theme.of(context).colorScheme.error),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Lỗi khi tải danh sách ví: ${snapshot.error}',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final wallets = snapshot.data ?? [];
+                if (wallets.isEmpty) {
+                  return Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.6)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              size: 20,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Chưa có ví nào. Vui lòng tạo ví trước.',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/wallet_list');
+                          },
+                          icon: const Icon(Icons.add),
+                          label: const Text('Tạo ví mới'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.6)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedWalletId ?? (wallets.isNotEmpty ? wallets.first['walletId'] : null),
+                      isExpanded: true,
+                      icon: Icon(Icons.arrow_drop_down, color: Theme.of(context).colorScheme.primary),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedWalletId = newValue;
+                        });
+                      },
+                      items: wallets.map<DropdownMenuItem<String>>((wallet) {
+                        final walletName = wallet['name'] ?? 'Không tên';
+                        final balance = (wallet['balance'] ?? 0.0).toDouble();
+                        final currency = wallet['currency'] ?? 'VND';
+                        final formattedBalance = CurrencyService.formatCurrency(balance, currency);
+                        
+                        return DropdownMenuItem<String>(
+                          value: wallet['walletId'],
+                          child: Row(
+                            children: [
+                              Icon(Icons.account_balance_wallet, color: Theme.of(context).colorScheme.primary),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(walletName),
+                                    Text(
+                                      formattedBalance,
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 20),
 
@@ -524,7 +731,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               builder: (context, categoryProvider, child) {
                 final hasCategories = categoryProvider.categories.isNotEmpty;
                 final isLoading = categoryProvider.isLoading;
-                final canSave = hasCategories && !isLoading && !_isSaving;
+                final hasWallet = _selectedWalletId != null;
+                final canSave = hasCategories && hasWallet && !isLoading && !_isSaving;
                 
                 return SizedBox(
                   width: double.infinity,
@@ -563,7 +771,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             ],
                           )
                         : Text(
-                            hasCategories ? 'Thêm Giao dịch' : 'Chưa có danh mục',
+                            canSave ? 'Thêm Giao dịch' : 'Chưa đủ thông tin',
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               color: canSave 
                                   ? Theme.of(context).colorScheme.onPrimary 

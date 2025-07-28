@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../settings/providers/currency_provider.dart';
 
 class AppSettingsScreen extends StatefulWidget {
   const AppSettingsScreen({super.key});
@@ -10,6 +12,12 @@ class AppSettingsScreen extends StatefulWidget {
 class _AppSettingsScreenState extends State<AppSettingsScreen> {
   String _selectedLanguage = 'vi';
   String _selectedCurrency = 'VND';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _selectedCurrency = Provider.of<CurrencyProvider>(context).currency;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,9 +111,12 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
     final currencies = [
       {'code': 'VND', 'name': 'VND (Việt Nam Đồng)'},
       {'code': 'USD', 'name': 'USD (Đô la Mỹ)'},
-      {'code': 'CNY', 'name': 'CNY (Nhân dân tệ)'},
-      {'code': 'EUR', 'name': 'EUR (Euro)'},
       {'code': 'JPY', 'name': 'JPY (Yên Nhật)'},
+      {'code': 'KRW', 'name': 'KRW (Won Hàn Quốc)'},
+      {'code': 'EUR', 'name': 'EUR (Euro)'},
+      {'code': 'CNY', 'name': 'CNY (Nhân dân tệ)'},
+      {'code': 'INR', 'name': 'INR (Rupee Ấn Độ)'},
+      {'code': 'BRL', 'name': 'BRL (Real Brazil)'},
     ];
 
     showDialog(
@@ -120,6 +131,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                 title: Text(currency['name']!),
                 selected: _selectedCurrency == currency['code'],
                 onTap: () {
+                  Provider.of<CurrencyProvider>(context, listen: false)
+                      .setCurrency(currency['code']!);
                   setState(() {
                     _selectedCurrency = currency['code']!;
                   });
