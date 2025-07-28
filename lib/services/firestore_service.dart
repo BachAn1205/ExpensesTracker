@@ -272,12 +272,12 @@ class FirestoreService {
   }
 
   Stream<List<Map<String, dynamic>>> getBudgets() {
-    if (currentUserId == null) return Stream.value([]);
-    return _firestore.collection('budgets')
-        .where('userId', isEqualTo: currentUserId)
-        .orderBy('startDate', descending: true)
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    return FirebaseFirestore.instance
+        .collection('budgets')
+        .where('userId', isEqualTo: userId)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList());
   }
 }
 

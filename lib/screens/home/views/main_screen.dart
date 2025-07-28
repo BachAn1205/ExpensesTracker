@@ -1330,7 +1330,11 @@ class _MainScreenState extends State<MainScreen> {
               showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
-                builder: (context) => const AddBudgetBottomSheet(),
+                builder: (context) => AddBudgetBottomSheet(
+                  onBudgetAdded: () {
+                    setState(() {}); // Cập nhật lại UI khi thêm ngân sách mới
+                  },
+                ),
               );
             },
           ),
@@ -1348,23 +1352,29 @@ class _MainScreenState extends State<MainScreen> {
                       const Text('Lọc theo ví: ', style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: DropdownButton<String>(
-                          value: _selectedBudgetWalletFilter,
-                          hint: const Text('Tất cả ví'),
-                          items: [
-                            const DropdownMenuItem<String>(
-                              value: null,
-                              child: Text('Tất cả ví'),
-                            ),
-                            ...walletProvider.wallets.map((wallet) => DropdownMenuItem(
-                              value: wallet.walletId,
-                              child: Text('${wallet.name} (${wallet.currency})'),
-                            )).toList(),
-                          ],
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedBudgetWalletFilter = value;
-                            });
+                        child: StreamBuilder<List<Map<String, dynamic>>>(
+                          stream: FirestoreService().getWallets(),
+                          builder: (context, snapshot) {
+                            final wallets = snapshot.data ?? [];
+                            return DropdownButton<String>(
+                              value: _selectedBudgetWalletFilter,
+                              hint: const Text('Tất cả ví'),
+                              items: [
+                                const DropdownMenuItem<String>(
+                                  value: null,
+                                  child: Text('Tất cả ví'),
+                                ),
+                                ...wallets.map<DropdownMenuItem<String>>((wallet) => DropdownMenuItem<String>(
+                                  value: wallet['walletId'],
+                                  child: Text('${wallet['name']} (${wallet['currency']})'),
+                                )).toList(),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedBudgetWalletFilter = value;
+                                });
+                              },
+                            );
                           },
                         ),
                       ),

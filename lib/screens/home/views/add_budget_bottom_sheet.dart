@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:expense_repository/expense_repository.dart';
 import '../../add_expense/providers/category_provider.dart';
 import '../../../services/firestore_service.dart';
 import '../../settings/providers/currency_provider.dart';
@@ -17,11 +18,26 @@ class AddBudgetBottomSheet extends StatefulWidget {
 
 class _AddBudgetBottomSheetState extends State<AddBudgetBottomSheet> {
   String? _selectedCategoryId;
-  String? _selectedWalletId; // Thêm biến chọn ví
+  String? _selectedWalletId;
+  String? _selectedWalletName;
+  String? _selectedWalletCurrency;
   final TextEditingController _limitController = TextEditingController();
   DateTime _startDate = DateTime.now();
   String _periodType = 'month'; // 'week', 'month', 'year'
   bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Tự động fetch wallets nếu chưa có
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final walletProvider = Provider.of<WalletProvider>(context, listen: false);
+      final repo = Provider.of<ExpenseRepository>(context, listen: false);
+      if (walletProvider.wallets.isEmpty) {
+        walletProvider.fetchWallets(repo);
+      }
+    });
+  }
 
   DateTime get _endDate {
     switch (_periodType) {
@@ -55,23 +71,185 @@ class _AddBudgetBottomSheetState extends State<AddBudgetBottomSheet> {
               const SizedBox(height: 16),
               
               // Chọn ví
-              DropdownButtonFormField<String>(
-                value: _selectedWalletId,
-                items: [
-                  const DropdownMenuItem<String>(
-                    value: null,
-                    child: Text('Tất cả ví'),
-                  ),
-                  ...walletProvider.wallets.map((wallet) => DropdownMenuItem(
-                    value: wallet.walletId,
-                    child: Text('${wallet.name} (${wallet.currency})'),
-                  )).toList(),
-                ],
-                onChanged: (val) => setState(() => _selectedWalletId = val),
-                decoration: const InputDecoration(
-                  labelText: 'Chọn ví (tùy chọn)',
-                  helperText: 'Nếu không chọn, ngân sách sẽ áp dụng cho tất cả ví',
+              Text(
+                'Chọn ví',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
+              ),
+              const SizedBox(height: 8),
+              StreamBuilder<List<Map<String, dynamic>>>(
+                stream: FirestoreService().getWallets(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.6)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Đang tải danh sách ví...',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Theme.of(context).colorScheme.error),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Lỗi khi tải danh sách ví:  {snapshot.error}',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final wallets = snapshot.data ?? [];
+                  if (wallets.isEmpty) {
+                    return Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.6)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                size: 20,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Chưa có ví nào. Vui lòng tạo ví trước.',
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/wallet_list');
+                            },
+                            icon: const Icon(Icons.add),
+                            label: const Text('Tạo ví mới'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.6)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedWalletId ?? (wallets.isNotEmpty ? wallets.first['walletId'] : null),
+                        isExpanded: true,
+                        icon: Icon(Icons.arrow_drop_down, color: Theme.of(context).colorScheme.primary),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedWalletId = newValue;
+                            if (newValue != null) {
+                              final selectedWallet = wallets.firstWhere((w) => w['walletId'] == newValue);
+                              _selectedWalletName = selectedWallet['name'];
+                              _selectedWalletCurrency = selectedWallet['currency'];
+                            } else {
+                              _selectedWalletName = null;
+                              _selectedWalletCurrency = null;
+                            }
+                          });
+                        },
+                        items: wallets.map<DropdownMenuItem<String>>((wallet) {
+                          final walletName = wallet['name'] ?? 'Không tên';
+                          final balance = (wallet['balance'] ?? 0.0).toDouble();
+                          final currency = wallet['currency'] ?? 'VND';
+                          final formattedBalance = formatCurrency(balance, currency);
+                          return DropdownMenuItem<String>(
+                            value: wallet['walletId'],
+                            child: Row(
+                              children: [
+                                Icon(Icons.account_balance_wallet, color: Theme.of(context).colorScheme.primary),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(walletName),
+                                      Text(
+                                        formattedBalance,
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 12),
               
@@ -91,7 +269,7 @@ class _AddBudgetBottomSheetState extends State<AddBudgetBottomSheet> {
                 controller: _limitController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'Giới hạn chi tiêu ($currency)',
+                  labelText: 'Giới hạn chi tiêu (${_selectedWalletCurrency ?? currency})',
                 ),
               ),
               const SizedBox(height: 12),
@@ -151,6 +329,11 @@ class _AddBudgetBottomSheetState extends State<AddBudgetBottomSheet> {
     );
   }
 
+  // Utility to format currency
+  String formatCurrency(num amount, String currency) {
+    return '${amount.toStringAsFixed(0)} $currency';
+  }
+
   Future<void> _saveBudget() async {
     if (_selectedCategoryId == null || _limitController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập đủ thông tin.')));
@@ -161,7 +344,7 @@ class _AddBudgetBottomSheetState extends State<AddBudgetBottomSheet> {
     
     try {
       final limit = double.tryParse(_limitController.text) ?? 0;
-      final currency = Provider.of<CurrencyProvider>(context, listen: false).currency;
+      final currency = _selectedWalletCurrency ?? Provider.of<CurrencyProvider>(context, listen: false).currency;
       
       // Tính toán số tiền đã chi trong khoảng thời gian này
       double spentAmount = 0.0;
