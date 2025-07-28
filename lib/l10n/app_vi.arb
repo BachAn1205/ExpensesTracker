@@ -11,7 +11,7 @@
     "editProfile": "Chỉnh sửa hồ sơ",
     "accountSettings": "Cài đặt tài khoản",
     "changePassword": "Đổi mật khẩu",
-    "submit": "Xác nhận",
+    "submit": "Gửi",
     "expense": "Chi tiêu",
     "addExpense": "Thêm chi tiêu",
     "newExpense": "Chi tiêu mới",
@@ -52,13 +52,14 @@
     "mxn": "MXN (Peso Mexico)",
     "brl": "BRL (Real Brazil)",
     "stats": "Thống kê",
-    "welcome": "Xin chào",
+    "welcome": "Chào mừng",
     "balance": "Số dư",
     "transactions": "Giao dịch",
     "viewAll": "Xem tất cả",
     "createCategory": "Tạo danh mục",
     "categoryName": "Tên danh mục",
     "selectIcon": "Chọn biểu tượng",
-    "selectColor": "Chọn màu sắc",
-    "saveColor": "Lưu màu sắc"
+    "selectColor": "Chọn màu",
+    "saveColor": "Lưu màu",
+    "logout": "Đăng xuất"
 }

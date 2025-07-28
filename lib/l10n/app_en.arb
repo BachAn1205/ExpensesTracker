@@ -60,5 +60,6 @@
     "categoryName": "Category Name",
     "selectIcon": "Select Icon",
     "selectColor": "Select Color",
-    "saveColor": "Save Color"
+    "saveColor": "Save Color",
+    "logout": "Logout"
 }

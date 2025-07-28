@@ -1,6 +1,8 @@
 import 'package:expense_repository/expense_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'generated/l10n/app_localizations.dart';
 import 'screens/home/providers/expense_provider.dart';
 import 'screens/home/views/home_screen.dart';
 import 'screens/home/views/main_screen.dart';
@@ -13,6 +15,7 @@ import '../screens/settings/change_password_screen.dart';
 import '../screens/settings/app_settings_screen.dart';
 import 'screens/home/views/account_screen.dart';
 import 'screens/settings/providers/currency_provider.dart';
+import 'screens/settings/providers/language_provider.dart';
 import 'screens/add_expense/providers/category_provider.dart';
 import 'screens/home/providers/wallet_provider.dart';
 import 'services/firestore_test_widget.dart';
@@ -46,37 +49,60 @@ class _MyAppViewState extends State<MyAppView> {
         ),
         ChangeNotifierProvider(create: (_) => ExpenseProvider()),
         ChangeNotifierProvider(create: (_) => CurrencyProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
         ChangeNotifierProvider(create: (_) => WalletProvider()),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: "Quản lý Chi tiêu",
-        theme: ThemeData(
-          colorScheme: ColorScheme.light(
-            background: Colors.grey.shade100,
-            onBackground: Colors.black,
-            primary: const Color(0xFF00B2E7),
-            secondary: const Color(0xFFE064F7),
-            tertiary: const Color(0xFFFF8D6C),
-            outline: Colors.grey,
-          ),
-        ),
-        initialRoute: '/register',
-        routes: {
-          '/register': (context) =>  RegisterScreen(),
-          '/login': (context) =>  LoginScreen(),
-          '/home': (context) => const HomeScreen(),
-          '/main_screen': (context) => const MainScreen(),
-          '/account_screen': (context) => const AccountScreen(),
-          '/settings': (context) => const SettingsScreen(),
-          '/settings/edit_profile': (context) => const EditProfileScreen(),
-          '/settings/account_settings': (context) => const AccountSettingsScreen(),
-          '/settings/change_password': (context) => const ChangePasswordScreen(),
-          '/settings/app_settings': (context) => const AppSettingsScreen(),
-          '/test': (context) => const FirestoreTestWidget(), // Thêm route test
-          '/category_list': (context) => const CategoryListScreen(),
-          '/wallet_list': (context) => const WalletListScreen(),
+      child: Consumer<LanguageProvider>(
+        builder: (context, languageProvider, child) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: "Quản lý Chi tiêu",
+            locale: Locale(languageProvider.currentLanguage),
+            supportedLocales: const [
+              Locale('vi', ''),
+              Locale('en', ''),
+              Locale('zh', ''),
+              Locale('de', ''),
+              Locale('fr', ''),
+              Locale('es', ''),
+              Locale('pt', ''),
+              Locale('ko', ''),
+              Locale('ja', ''),
+            ],
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            theme: ThemeData(
+              colorScheme: ColorScheme.light(
+                background: Colors.grey.shade100,
+                onBackground: Colors.black,
+                primary: const Color(0xFF00B2E7),
+                secondary: const Color(0xFFE064F7),
+                tertiary: const Color(0xFFFF8D6C),
+                outline: Colors.grey,
+              ),
+            ),
+            initialRoute: '/register',
+            routes: {
+              '/register': (context) =>  RegisterScreen(),
+              '/login': (context) =>  LoginScreen(),
+              '/home': (context) => const HomeScreen(),
+              '/main_screen': (context) => const MainScreen(),
+              '/account_screen': (context) => const AccountScreen(),
+              '/settings': (context) => const SettingsScreen(),
+              '/settings/edit_profile': (context) => const EditProfileScreen(),
+              '/settings/account_settings': (context) => const AccountSettingsScreen(),
+              '/settings/change_password': (context) => const ChangePasswordScreen(),
+              '/settings/app_settings': (context) => const AppSettingsScreen(),
+              '/test': (context) => const FirestoreTestWidget(), // Thêm route test
+              '/category_list': (context) => const CategoryListScreen(),
+              '/wallet_list': (context) => const WalletListScreen(),
+            },
+          );
         },
       ),
     );
