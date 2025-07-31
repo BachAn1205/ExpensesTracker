@@ -1438,6 +1438,10 @@ class _MainScreenState extends State<MainScreen> {
                           final catName = categoryMap[b['categoryId']] ?? b['categoryId'] ?? '';
                           final walletId = b['walletId'];
                           final walletName = walletId != null ? walletMap[walletId] ?? 'Không tên' : 'Tất cả ví';
+                          final startDate = b['startDate'] is Timestamp ? b['startDate'].toDate() : DateTime.now();
+                          final endDate = b['endDate'] is Timestamp ? b['endDate'].toDate() : DateTime.now();
+                          final currency = b['currency'] ?? '';
+                          final limit = b['limit'] ?? 0;
                           
                           return Card(
                             elevation: 2,
@@ -1449,8 +1453,17 @@ class _MainScreenState extends State<MainScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text('Ví: $walletName'),
-                                  Text('Giới hạn: ${b['limit']} ${b['currency']}'),
-                                  Text('Đã chi: ${b['spentAmount'] ?? 0} ${b['currency']}'),
+                                  Text('Giới hạn: $limit $currency'),
+                                  // Sử dụng FutureBuilder để tính lại số tiền đã chi thực tế
+                                  FutureBuilder<double>(
+                                    future: walletId != null
+                                        ? _calculateSpentAmountForWallet(b['categoryId'], walletId, startDate, endDate)
+                                        : _calculateSpentAmountForAllWallets(b['categoryId'], startDate, endDate),
+                                    builder: (context, snapshot) {
+                                      final spent = snapshot.data ?? 0.0;
+                                      return Text('Đã chi: ${spent.toStringAsFixed(0)} $currency');
+                                    },
+                                  ),
                                   Text('Từ: ${_formatDate(b['startDate'])}  Đến: ${_formatDate(b['endDate'])}'),
                                 ],
                               ),
@@ -1653,5 +1666,54 @@ class _MainScreenState extends State<MainScreen> {
     ];
     
     return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  Future<double> _calculateSpentAmountForWallet(String categoryId, String walletId, DateTime startDate, DateTime endDate) async {
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) return 0.0;
+      final query = FirebaseFirestore.instance
+          .collection('transactions')
+          .where('userId', isEqualTo: userId)
+          .where('categoryId', isEqualTo: categoryId)
+          .where('walletId', isEqualTo: walletId)
+          .where('type', isEqualTo: 'expense')
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
+          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
+      final snapshot = await query.get();
+      double totalSpent = 0.0;
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        totalSpent += (data['amount'] as num?)?.toDouble() ?? 0.0;
+      }
+      return totalSpent;
+    } catch (e) {
+      print('Error calculating spent amount for wallet: $e');
+      return 0.0;
+    }
+  }
+
+  Future<double> _calculateSpentAmountForAllWallets(String categoryId, DateTime startDate, DateTime endDate) async {
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) return 0.0;
+      final query = FirebaseFirestore.instance
+          .collection('transactions')
+          .where('userId', isEqualTo: userId)
+          .where('categoryId', isEqualTo: categoryId)
+          .where('type', isEqualTo: 'expense')
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
+          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
+      final snapshot = await query.get();
+      double totalSpent = 0.0;
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        totalSpent += (data['amount'] as num?)?.toDouble() ?? 0.0;
+      }
+      return totalSpent;
+    } catch (e) {
+      print('Error calculating spent amount for all wallets: $e');
+      return 0.0;
+    }
   }
 }
